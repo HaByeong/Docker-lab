@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>할일 목록</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>할일 목록</h1>
+        <div class="input-group">
+            <input type="text" id="todo-input" placeholder="새 할일 추가">
+            <button id="add-todo">추가</button>
+        </div>
+        <ul id="todo-list"></ul>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const todoList = document.getElementById('todo-list');
+            const todoInput = document.getElementById('todo-input');
+            const addTodoButton = document.getElementById('add-todo');
+
+            function fetchTodos() {
+                fetch('/todos')
+                    .then(response => response.json())
+                    .then(todos => {
+                        todoList.innerHTML = '';
+                        todos.forEach((todo, index) => {
+                            const todoItem = document.createElement('li');
+                            todoItem.classList.add('todo-item');
+                            todoItem.innerHTML = `
+                                <span>${todo}</span>
+                                <button onclick="deleteTodo(${index})">삭제</button>
+                            `;
+                            todoList.appendChild(todoItem);
+                        });
+                    });
+            }
+
+            function addTodo(event) {
+                event.preventDefault();
+                const todo = todoInput.value;
+                if (todo) {
+                    fetch('/todos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ todo })
+                    }).then(response => response.json())
+                      .then(data => {
+                          if (data.message === '할일이 추가되었습니다!') {
+                              const todoItem = document.createElement('li');
+                              todoItem.classList.add('todo-item');
+                              todoItem.innerHTML = `
+                                  <span>${todo}</span>
+                                  <button onclick="deleteTodoFromUI(${todos.length})">삭제</button>
+                              `;
+                              todoList.appendChild(todoItem);
+                              todoInput.value = '';
+                          }
+                      }).catch(error => console.error('오류:', error));
+                }
+            }
+
+            window.deleteTodo = function(index) {
+                fetch(`/todos/${index}`, {
+                    method: 'DELETE'
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.message === '할일이 삭제되었습니다!') {
+                          const todoItems = document.querySelectorAll('.todo-item');
+                          if (todoItems[index]) {
+                              todoItems[index].remove();
+                          }
+                      }
+                  }).catch(error => console.error('오류:', error));
+            }
+
+            window.deleteTodoFromUI = function(index) {
+                fetch(`/todos/${index}`, {
+                    method: 'DELETE'
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.message === '할일이 삭제되었습니다!') {
+                          const todoItems = document.querySelectorAll('.todo-item');
+                          if (todoItems[index]) {
+                              todoItems[index].remove();
+                          }
+                      }
+                  }).catch(error => console.error('오류:', error));
+            }
+
+            addTodoButton.addEventListener('click', addTodo);
+            fetchTodos();
+        });
+    </script>
+</body>
+</html>
+
